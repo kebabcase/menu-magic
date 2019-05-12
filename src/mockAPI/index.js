@@ -7,16 +7,16 @@
  * Don't read too much into the implementation, just assume all of this is coming from a black box API.
  *
  */
-import {Map, setIn, Set, fromJS} from "immutable"
+import { Map, setIn, Set, fromJS } from "immutable"
 import recipesById from './recipesById'
 import recipeIdsByIng from './recipeIdsByIng'
 import restaurantsById from './restaurantsById'
 
 // Pretend backend data
-const RECIPES_BY_ID= fromJS(recipesById)
+const RECIPES_BY_ID = fromJS(recipesById)
 const RECIPES = RECIPES_BY_ID.valueSeq()
 const RECIPES_BY_RESTAURANT_ID = RECIPES.groupBy(r => r.get('restaurant-id'))
-const RECIPE_IDS=Set(RECIPES_BY_ID.keys())
+const RECIPE_IDS = Set(RECIPES_BY_ID.keys())
 const RECIPES_BY_INGREDIENT = fromJS(recipeIdsByIng)
 const RESTAURANTS_BY_ID = fromJS(restaurantsById)
 
@@ -36,48 +36,48 @@ const RESTAURANTS_BY_ID = fromJS(restaurantsById)
  * @param {Number} limit
  * @returns {Promise<any>}
  */
-export const queryRestaurantsRequest = ({ingredients, offset, limit}) => {
-    ingredients = fromJS(ingredients || [])
-    offset = offset || 0
-    limit = limit || 100
-    return new Promise((resolve, reject)=>{
+export const queryRestaurantsRequest = ({ ingredients, offset, limit }) => {
+  ingredients = fromJS(ingredients || [])
+  offset = offset || 0
+  limit = limit || 100
+  return new Promise((resolve, reject) => {
 
-        // Calculate matching recipes by intersecting ID sets
-        const matchingRecipes = ingredients
-            .map(ing => RECIPES_BY_INGREDIENT.get(ing))
-            .reduce((output, curSet) => (output.intersect(curSet)), RECIPE_IDS)
-            .map(recId => RECIPES_BY_ID.get(recId))
+    // Calculate matching recipes by intersecting ID sets
+    const matchingRecipes = ingredients
+      .map(ing => RECIPES_BY_INGREDIENT.get(ing))
+      .reduce((output, curSet) => (output.intersect(curSet)), RECIPE_IDS)
+      .map(recId => RECIPES_BY_ID.get(recId));
 
-        // Lookup table for getting matching counts for a restaurant
-        const matchingRecipesByRestaurantId = matchingRecipes.groupBy(rec=>rec.get('restaurant-id'))
+    // Lookup table for getting matching counts for a restaurant
+    const matchingRecipesByRestaurantId = matchingRecipes.groupBy(rec => rec.get('restaurant-id'))
 
-        // Sort by # of matching recipes, then restaurant name
-        const sortByMatchCountFn = rest => ([
-            (Number.MAX_SAFE_INTEGER - matchingRecipesByRestaurantId.get(rest.get('id')).count()).toString().padStart(10, "0"),
-            RESTAURANTS_BY_ID.get(rest.get('id')).get('name')
-        ].join("_"))
+    // Sort by # of matching recipes, then restaurant name
+    const sortByMatchCountFn = rest => ([
+      (Number.MAX_SAFE_INTEGER - matchingRecipesByRestaurantId.get(rest.get('id')).count()).toString().padStart(10, "0"),
+      RESTAURANTS_BY_ID.get(rest.get('id')).get('name')
+    ].join("_"))
 
-        // Sort alphabetically by restaurant name
-        const sortByNameFn = rest => ([
-            RESTAURANTS_BY_ID.get(rest.get('id')).get('name')
-        ].join("_"))
+    // Sort alphabetically by restaurant name
+    const sortByNameFn = rest => ([
+      RESTAURANTS_BY_ID.get(rest.get('id')).get('name')
+    ].join("_"))
 
-        // Choose sort fn based on criteria
-        const sortByFn = ((ingredients.isEmpty()) ? sortByNameFn : sortByMatchCountFn)
+    // Choose sort fn based on criteria
+    const sortByFn = ((ingredients.isEmpty()) ? sortByNameFn : sortByMatchCountFn)
 
-        // Calculate response data
-        const output = matchingRecipes
-            // map to restaurants
-            .map(rec => RESTAURANTS_BY_ID.get(rec.get('restaurant-id')))
-            // only return limited set of attributes for the restaurants
-            .map(rest => Map({id: rest.get('id'), name: rest.get('name')}))
-            // apply sort
-            .sortBy(sortByFn)
-            // cut for the page
-            .slice(offset, offset + limit).toJS()
+    // Calculate response data
+    const output = matchingRecipes
+      // map to restaurants
+      .map(rec => RESTAURANTS_BY_ID.get(rec.get('restaurant-id')))
+      // only return limited set of attributes for the restaurants
+      .map(rest => Map({ id: rest.get('id'), name: rest.get('name') }))
+      // apply sort
+      .sortBy(sortByFn)
+      // cut for the page
+      .slice(offset, offset + limit).toJS()
 
-        resolve({ data: output, status: 200 })
-    })
+    resolve({ data: output, status: 200 })
+  })
 };
 
 
@@ -110,12 +110,12 @@ export const queryRestaurantsRequest = ({ingredients, offset, limit}) => {
  * @returns {Promise<any>}
  */
 export const getRestaurantRequest = (id) => {
-    return new Promise((resolve, reject)=>{
+  return new Promise((resolve, reject) => {
 
-        // Associate the menu data with the rest of the restaurant data
-        const output = setIn(RESTAURANTS_BY_ID.get(id), ['menu'], RECIPES_BY_RESTAURANT_ID.get(id) ).toJS()
-        resolve({ data: output, status: 200 })
-    })
+    // Associate the menu data with the rest of the restaurant data
+    const output = setIn(RESTAURANTS_BY_ID.get(id), ['menu'], RECIPES_BY_RESTAURANT_ID.get(id)).toJS()
+    resolve({ data: output, status: 200 })
+  })
 };
 
 
@@ -134,37 +134,37 @@ export const getRestaurantRequest = (id) => {
  * @param {Number} limit
  * @returns {Promise<any>}
  */
-export const queryRecipesRequest = ({ingredients, offset, limit}) => {
-    ingredients = ingredients || []
-    offset = offset || 0
-    limit = limit || 100
-    return new Promise((resolve, reject)=>{
+export const queryRecipesRequest = ({ ingredients, offset, limit }) => {
+  ingredients = ingredients || []
+  offset = offset || 0
+  limit = limit || 100
+  return new Promise((resolve, reject) => {
 
-        // Calculate matching recipes by intersecting ID sets
-        const matchingRecipes = ingredients
-            .map(ing => RECIPES_BY_INGREDIENT.get(ing))
-            .reduce((output, curSet) => (output.intersect(curSet)), RECIPE_IDS)
-            .map(recId => RECIPES_BY_ID.get(recId))
+    // Calculate matching recipes by intersecting ID sets
+    const matchingRecipes = ingredients
+      .map(ing => RECIPES_BY_INGREDIENT.get(ing))
+      .reduce((output, curSet) => (output.intersect(curSet)), RECIPE_IDS)
+      .map(recId => RECIPES_BY_ID.get(recId))
 
-        // Lookup table for getting matching counts for a restaurant
-        const matchingRecipesByRestaurantId = matchingRecipes.groupBy(rec=>rec.get('restaurant-id'))
+    // Lookup table for getting matching counts for a restaurant
+    const matchingRecipesByRestaurantId = matchingRecipes.groupBy(rec => rec.get('restaurant-id'))
 
-        // Sort by # of matching recipes, then restaurant name
-        const sortByFn = rec => ([
-            (Number.MAX_SAFE_INTEGER - matchingRecipesByRestaurantId.get(rec.get('restaurant-id')).count()).toString().padStart(10, "0"),
-            RESTAURANTS_BY_ID.get(rec.get('restaurant-id')).get('name')
-        ].join("_"))
+    // Sort by # of matching recipes, then restaurant name
+    const sortByFn = rec => ([
+      (Number.MAX_SAFE_INTEGER - matchingRecipesByRestaurantId.get(rec.get('restaurant-id')).count()).toString().padStart(10, "0"),
+      RESTAURANTS_BY_ID.get(rec.get('restaurant-id')).get('name')
+    ].join("_"))
 
-        // Calculate the response
-        const output = matchingRecipes
-            // Apply sort
-            .sortBy(sortByFn)
-            // Cut for page
-            .slice(offset, offset + limit)
-            // Only return limited set of attributes for the 'listing'
-            .map(rec=>({id: rec.get('id'), name: rec.get('title'),restaurantId: rec.get('restaurant-id')}))
-            .toJS()
+    // Calculate the response
+    const output = matchingRecipes
+      // Apply sort
+      .sortBy(sortByFn)
+      // Cut for page
+      .slice(offset, offset + limit)
+      // Only return limited set of attributes for the 'listing'
+      .map(rec => ({ id: rec.get('id'), name: rec.get('title'), restaurantId: rec.get('restaurant-id') }))
+      .toJS()
 
-        resolve({data: output, status: 200})
-    })
+    resolve({ data: output, status: 200 })
+  })
 };
